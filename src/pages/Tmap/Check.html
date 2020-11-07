@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>테스트페이지</title>
+
+    <script src="https://apis.openapi.sk.com/tmap/jsv2?version=2&appKey=01ab749a-7332-4a8d-93ee-dc823cbe3de1"></script>
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <script src="https://goessner.net/download/prj/jsonxml/xml2json.js"></script>
+    <script type="text/javascript">
+        let poiArray = [];
+        function initMap() {
+            map = new Tmapv2.Map("map_div", { // 지도가 생성될 div
+                center: new Tmapv2.LatLng(37.57392629, 127.01935042),
+                width: "100vw", // 지도의 넓이
+                height: "100vh", // 지도의 높이
+                pinchZoom: true,
+            });
+            map.setZoom(16);
+            poiArray.push(
+                new Tmapv2.LatLng(37.5548865, 126.9715998)
+            )
+            poiArray.push(
+                new Tmapv2.LatLng(37.5548448, 126.9706832)
+            )
+
+            let polyline = new Tmapv2.Polyline({
+                path: poiArray,
+                strokeColor: "#FF0000",     // 라인 색상
+                strokeWeight: 6,            // 라인 두께
+                fillOpacity: 1,            // 라인 투명도
+                strokeStyle: 'dot',       // 선의 종류
+                outline: false,              // 외각 선을 설정
+                map: map                    // 지도 객체
+            });
+        }
+    </script>
+</head>
+
+<body onload="initMap()">
+    <div id="map_div"></div>
+</body>
+</html>

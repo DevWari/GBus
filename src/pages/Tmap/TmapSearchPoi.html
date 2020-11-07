@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>장소페이지(검색페이지)</title>
+
+    <script src="https://apis.openapi.sk.com/tmap/jsv2?version=2&appKey=01ab749a-7332-4a8d-93ee-dc823cbe3de1"></script>
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <script src="https://goessner.net/download/prj/jsonxml/xml2json.js"></script>
+    <script type="text/javascript">
+        let x, y, map;
+        let poiMarker, myMarker;
+        let poiIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAfCAYAAADnTu3OAAAABHNCSVQICAgIfAhkiAAAAkVJREFUSEuVltFRGzEQhj+JAiAVhJu79zgVxFQAVBBTQaCCQAWxKwhUgKkgTgXB73jOHcQUECuzutVFJ+uOi2f8YGn317+7/+7akPnUcLKHzw4uDJzSfHGwMvBsYVHANudr0sMN3AJfgJOcQ3R2b+GmgF1s1wIKqz/waGD6BlB8vbVwWcBzOGwBX5pwPmXA1k5Z9NzvLBSBqQfUML/GYA6ejuA6zpXm9hpIbVcVnIm/UaM6zpmDqwru+0KvYbKHFXAcbBxcVrA0G5AXv0UXTxVcyO+XpspyJ1WW5M9LuNOosn4mzZ3mY6tgjxmWi7IhIakS6bwPNiUYYSgvB+rrEiY54xg4PLqBuUrMX1v4KIAuCvdnpbKJz1OWFs4KWKXFlPMhwJh5B1OYiPb6ADt5sPBONJWTkqLGaRFBfwiv+ZAzgr4rm/aTpHdyBKwtzIRdDdM9/Iiph6KIc0eoISQxrv8Nh11oMdWugPkCxsyFoWgtlYfk77aERVoQZSbajMHEzMspdMrvnq6Q/C5V1GIigk+BvGvbKdoRSwPnfa024vy11HHnh8NAV4zA8iZt97TjK22jsUjaITK+/ASPAQ+qPQbUQdtdHUCVgrzSjqQxgKENg21npwx0RxY7ZddhqCKWbTeaZcruAFArPjPw/a1wHTxUMEvtDtaogvYtrOD/amGS281ZQN0ZvwZY3pTN4Dj4ZAHFasz4+i9ABe3MO0BCncaLfVQOg1Em9N5QszrMhRDWrCz+sF6HFNCbw9hJ8mlhnv4xygH/BduqvXy4K52oAAAAAElFTkSuQmCC';
+        function getPoiLocation(lon, lat) {
+            x = lon;
+            y = lat;
+            initMap();
+        }
+        function initMap() {
+            map = new Tmapv2.Map("map_div", { // 지도가 생성될 div
+                center: new Tmapv2.LatLng(x, y),
+                width: "100vw", // 지도의 넓이
+                height: "100vh", // 지도의 높이
+                pinchZoom: true,
+            });
+            map.setZoom(17);
+
+            // 주어진 장소를 지도에 표시하기 위한 마커 생성
+            poiMarker = new Tmapv2.Marker({
+                position: new Tmapv2.LatLng( x, y ), //Marker의 중심좌표 설정.
+                map: map, //Marker가 표시될 Map 설정..
+                icon: poiIcon
+            });
+            // 중심좌표에 대한 상세정보 얻기
+            reverseGeo(y, x)
+        }
+
+        function fitBounds(x, y) {
+            let latlngSW = new Tmapv2.LatLng(y + 0.002, x - 0.002);
+            let latlngNE = new Tmapv2.LatLng(y - 0.002, x  + 0.002);
+            let latlngBound = new Tmapv2.LatLngBounds(latlngSW, latlngNE)
+            map.fitBounds(latlngBound)
+
+            myMarker = new Tmapv2.Marker({
+                position: new Tmapv2.LatLng(y,x), //Marker의 중심좌표 설정.
+                map: map, //Marker가 표시될 Map 설정..
+                icon: poiIcon
+            });
+        }
+
+        // 지도 및부분에 선택한 주소의 상세정보를 얻어오기 위하여 필요하다.
+        function reverseGeo(lon, lat) {
+            $.ajax({
+                method: 'GET',
+                url: 'https://apis.openapi.sk.com/tmap/geo/reversegeocoding?version=1&format=json&callback=result',
+                async: false,
+                data: {
+                    'appKey': '01ab749a-7332-4a8d-93ee-dc823cbe3de1',
+                    'coordType': 'WGS84GEO',
+                    'addressType': 'A10',
+                    "lon" : lon,
+                    "lat" : lat
+                },
+                success: function(response) {
+                    let arrResult = response.addressInfo;
+                    console.log("total response data: ", response)
+
+                    let newRoadAddrName;
+
+                    //법정동 마지막 문자
+                    let lastLegal = arrResult.legalDong
+                        .charAt(arrResult.legalDong.length - 1);
+
+                    // 새주소
+                    let newRoadAddr = arrResult.city_do + ' '
+                        + arrResult.gu_gun + ' ';
+
+                    if (arrResult.eup_myun === '' && (lastLegal === "읍" || lastLegal === "면")) {//읍면
+                        newRoadAddr += arrResult.legalDong;
+                    } else {
+                        newRoadAddr += arrResult.eup_myun;
+                    }
+                    newRoadAddr += ' ' + arrResult.roadName + ' '
+                        + arrResult.buildingIndex;
+
+                    newRoadAddrName = arrResult.adminDong + ' ' + arrResult.bunji;
+                    console.log("new road: ", newRoadAddr + '-----------' + newRoadAddrName)
+                    console.log("lon and lat road: ", lon + '-----------' + lat)
+                    toReactNative={
+                        isSel: true,
+                        data: {
+                            poiName: newRoadAddr,
+                            poiAddress: newRoadAddrName,
+                            x: lon,
+                            y: lat,
+                            poiBuildingName: arrResult.buildingName,
+                            poiNameDemo: arrResult.city_do + ' ' + arrResult.gu_gun + ' ' + arrResult.adminDong
+                        }
+                    }
+
+                    console.log("toReactNative value is : ", toReactNative)
+                    postMessageReactNative(JSON.stringify(toReactNative))
+                },
+                error : function(request, status, error) {
+                    console.log("code:" + request.status + "\n"
+                        + "message:" + request.responseText + "\n"
+                        + "error:" + error);
+                    if(request.status !== 200) {
+                        console.log(JSON.parse(request.responseText).error.message)
+                        toReactNative={
+                            isSel: false,
+                            data: JSON.parse(request.responseText).error.message
+                        }
+                        postMessageReactNative(JSON.stringify(toReactNative))
+                    }
+
+                }
+            })
+        }
+        function postMessageReactNative(text) {
+            try{
+                window.ReactNativeWebView.postMessage(text);
+            } catch (e) {console.log(e)}
+        }
+    </script>
+</head>
+
+<body onload="getPoiLocation(37.57392629, 127.01935042)">
+<div id="map_div"></div>
+<a onclick="fitBounds(127.02719907145543, 37.49523596737127)">Fit Bounds</a>
+</body>
+</html>

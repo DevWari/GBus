@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>주변정류소</title>
+
+	<script src="https://apis.openapi.sk.com/tmap/jsv2?version=2&appKey=01ab749a-7332-4a8d-93ee-dc823cbe3de1"></script>
+	<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	<script src="https://goessner.net/download/prj/jsonxml/xml2json.js"></script>
+
+	<script type="text/javascript">
+		let x = '';
+		let y = '';
+		let aroundStationAfterDrag = '';
+		let markerPositions = [];
+		let map, marker, myMarker, myBounds, toReactNative;
+
+		let currentLocation = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAfCAYAAADnTu3OAAAABHNCSVQICAgIfAhkiAAAAkVJREFUSEuVltFRGzEQhj+JAiAVhJu79zgVxFQAVBBTQaCCQAWxKwhUgKkgTgXB73jOHcQUECuzutVFJ+uOi2f8YGn317+7/+7akPnUcLKHzw4uDJzSfHGwMvBsYVHANudr0sMN3AJfgJOcQ3R2b+GmgF1s1wIKqz/waGD6BlB8vbVwWcBzOGwBX5pwPmXA1k5Z9NzvLBSBqQfUML/GYA6ejuA6zpXm9hpIbVcVnIm/UaM6zpmDqwru+0KvYbKHFXAcbBxcVrA0G5AXv0UXTxVcyO+XpspyJ1WW5M9LuNOosn4mzZ3mY6tgjxmWi7IhIakS6bwPNiUYYSgvB+rrEiY54xg4PLqBuUrMX1v4KIAuCvdnpbKJz1OWFs4KWKXFlPMhwJh5B1OYiPb6ADt5sPBONJWTkqLGaRFBfwiv+ZAzgr4rm/aTpHdyBKwtzIRdDdM9/Iiph6KIc0eoISQxrv8Nh11oMdWugPkCxsyFoWgtlYfk77aERVoQZSbajMHEzMspdMrvnq6Q/C5V1GIigk+BvGvbKdoRSwPnfa024vy11HHnh8NAV4zA8iZt97TjK22jsUjaITK+/ASPAQ+qPQbUQdtdHUCVgrzSjqQxgKENg21npwx0RxY7ZddhqCKWbTeaZcruAFArPjPw/a1wHTxUMEvtDtaogvYtrOD/amGS281ZQN0ZvwZY3pTN4Dj4ZAHFasz4+i9ABe3MO0BCncaLfVQOg1Em9N5QszrMhRDWrCz+sF6HFNCbw9hJ8mlhnv4xygH/BduqvXy4K52oAAAAAElFTkSuQmCC'
+		let busMarker = 'data:image/png;base64,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';
+
+
+		function setLocation(lat, lng) {
+			x = lat;
+			y = lng;
+			initTmap();
+		}
+
+		// 페이지가 로딩이 된 후 호출하는 함수입니다.
+		function initTmap() {
+			// map 생성
+			// Tmapv2.Map을 이용하여, 지도가 들어갈 div, 넓이, 높이를 설정합니다.
+			map = new Tmapv2.Map("map_div", { // 지도가 생성될 div
+				center: new Tmapv2.LatLng(y, x),
+				width : "100vw", // 지도의 넓이
+				height : "100vh", // 지도의 높이
+				pinchZoom: true,
+			});
+
+			myMarker = new Tmapv2.Marker({
+				position: new Tmapv2.LatLng(y,x), //Marker의 중심좌표 설정.
+				map: map, //Marker가 표시될 Map 설정..
+				icon: currentLocation
+			});
+
+			map.setZoom(18);
+			map.addListener("zoom_changed", onChanged); // 지도의 줌 변경시, 이벤트 리스너 등록.
+			map.addListener("dragend", onDragend); // 지도 드래그 끝났을 때, 이벤트 리스너 등록.
+			map.addListener("touchend", onTouchend); // 모바일에서 지도 터치 터치가 끝났을때, 이벤트 리스너 등록.
+
+			myBounds = map.getBounds();
+
+			$.ajax({
+				url: 'http://220.64.14.147/ws/rest/busstationservice/searcharound',
+				type: 'GET',
+				data: { serviceKey: '1234567890', x: x, y: y },
+				success: function (data) {
+					aroundStationAfterDrag = JSON.parse(xml2json(data, " "));
+					console.log(aroundStationAfterDrag)
+					if(aroundStationAfterDrag.response.msgHeader.resultCode === '0') {
+						for (let i = 0; i < aroundStationAfterDrag.response.msgBody.busStationAroundList.length; i++) {
+							marker = new Tmapv2.Marker({
+								position: new Tmapv2.LatLng(
+										aroundStationAfterDrag.response.msgBody.busStationAroundList[i].y,
+										aroundStationAfterDrag.response.msgBody.busStationAroundList[i].x
+								), //Marker의 중심좌표 설정.
+								map: map, //Marker가 표시될 Map 설정..
+								icon: 'data:image/png;base64,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'
+							});
+							markerPositions.push(marker);
+							aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance = Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) + 'm'
+
+							marker.addListener("click", function(evt) {
+								console.log(aroundStationAfterDrag.response.msgBody.busStationAroundList[i].stationName +
+										aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance)
+							});
+							marker.addListener("touchend", function (evt) {
+								toReactNative={
+									isMarkerClick : true,
+									data: aroundStationAfterDrag.response.msgBody.busStationAroundList[i]
+								}
+								postMessageReactNative(JSON.stringify(toReactNative));
+							});
+						}
+						toReactNative = {
+							isMarkerClick: false,
+							originalData: '1',
+							data: aroundStationAfterDrag
+						}
+						postMessageReactNative(JSON.stringify(toReactNative));
+					}
+					else {
+						toReactNative={
+							isMarkerClick: false,
+							originalData: '0',
+							data: aroundStationAfterDrag.response.msgHeader.resultMessage
+						}
+						postMessageReactNative(JSON.stringify(toReactNative))
+					}
+				},
+				error: function (request, error) {
+					console.log("Request: "+JSON.stringify(request));
+				}
+			});
+		}
+
+		function onDragend(e) {
+			let mapCenter = map.getCenter();
+			if(map.getZoom() >= 18) {
+				$.ajax({
+					url: 'http://220.64.14.147/ws/rest/busstationservice/searcharound',
+					type: 'GET',
+					data: {
+						serviceKey: '1234567890',
+						x: mapCenter._lng, // 127....
+						y: mapCenter._lat  // 37.....
+					},
+					success: function (data) {
+
+						aroundStationAfterDrag = JSON.parse(xml2json(data, " "));
+						if(markerPositions.length !== 0) {
+							for(let j = 0; j<markerPositions.length; j++) {
+								markerPositions[j].setMap(null);
+							}
+						}
+						if(aroundStationAfterDrag.response.msgHeader.resultCode === '0') {
+							for (let i = 0; i < aroundStationAfterDrag.response.msgBody.busStationAroundList.length; i++) {
+								marker = new Tmapv2.Marker({
+									position: new Tmapv2.LatLng(
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].y,
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].x
+									), //Marker의 중심좌표 설정.
+									map: map, //Marker가 표시될 Map 설정..
+									icon: busMarker
+								});
+								aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance =
+										Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) >= 1000 ?
+												Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) / 1000 + 'km' :
+												Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) + 'm'
+								markerPositions.push(marker)
+								marker.addListener("click", function(evt) {
+									console.log(aroundStationAfterDrag.response.msgBody.busStationAroundList[i].stationName +
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance)
+								});
+								marker.addListener("touchend", function (evt) {
+									toReactNative={
+										isMarkerClick : true,
+										data: aroundStationAfterDrag.response.msgBody.busStationAroundList[i]
+									}
+									postMessageReactNative(JSON.stringify(toReactNative));
+								});
+							}
+						} else {
+							toReactNative={
+								isMarkerClick: false,
+								originalData: '0',
+								data: aroundStationAfterDrag.response.msgHeader.resultMessage
+							}
+							postMessageReactNative(JSON.stringify(toReactNative))
+						}
+					},
+					error: function (request, error) {
+						console.log("Request: "+JSON.stringify(request));
+					}
+				});
+			}
+		}
+		function onChanged(e) {
+			let mapCenter = map.getCenter();
+			if(map.getZoom() < 18) {
+				for(let j = 0; j<markerPositions.length; j++) {
+					markerPositions[j].setMap(null);
+				}
+			} else {
+				$.ajax({
+					url: 'http://220.64.14.147/ws/rest/busstationservice/searcharound',
+					type: 'GET',
+					data: {
+						serviceKey: '1234567890',
+						x: mapCenter._lng, // 127....
+						y: mapCenter._lat  // 37.....
+					},
+					success: function (data) {
+
+						aroundStationAfterDrag = JSON.parse(xml2json(data, " "));
+						if(markerPositions.length !== 0) {
+							for(let j = 0; j<markerPositions.length; j++) {
+								markerPositions[j].setMap(null);
+							}
+						}
+
+						if(aroundStationAfterDrag.response.msgHeader.resultCode === '0') {
+							for (let i = 0; i < aroundStationAfterDrag.response.msgBody.busStationAroundList.length; i++) {
+								marker = new Tmapv2.Marker({
+									position: new Tmapv2.LatLng(
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].y,
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].x
+									), //Marker의 중심좌표 설정.
+									map: map, //Marker가 표시될 Map 설정..
+									icon: 'data:image/png;base64,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',
+								});
+								aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance =
+										Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) >= 1000 ?
+												Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) / 1000 + 'km' :
+												Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) + 'm'
+								markerPositions.push(marker)
+								marker.addListener("click", function(evt) {
+									console.log(aroundStationAfterDrag.response.msgBody.busStationAroundList[i].stationName +
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance)
+								});
+								marker.addListener("touchend", function (evt) {
+									toReactNative={
+										isMarkerClick : true,
+										data: aroundStationAfterDrag.response.msgBody.busStationAroundList[i]
+									}
+									postMessageReactNative(JSON.stringify(toReactNative));
+								});
+							}
+
+						} else {
+							toReactNative={
+								isMarkerClick: false,
+								originalData: '0',
+								data: aroundStationAfterDrag.response.msgHeader.resultMessage
+							}
+							postMessageReactNative(JSON.stringify(toReactNative))
+						}
+					},
+					error: function (request, error) {
+						console.log("Request: "+JSON.stringify(request));
+					}
+				});
+			}
+		}
+		function onTouchend(e) {
+			let mapCenter = map.getCenter();
+			if(map.getZoom() >= 18) {
+				$.ajax({
+					url: 'http://220.64.14.147/ws/rest/busstationservice/searcharound',
+					type: 'GET',
+					data: {
+						serviceKey: '1234567890',
+						x: mapCenter._lng, // 127....
+						y: mapCenter._lat  // 37.....
+					},
+					success: function (data) {
+
+						aroundStationAfterDrag = JSON.parse(xml2json(data, " "));
+						if(markerPositions.length !== 0) {
+							for(let j = 0; j<markerPositions.length; j++) {
+								markerPositions[j].setMap(null);
+							}
+						}
+						if(aroundStationAfterDrag.response.msgHeader.resultCode === '0') {
+							for (let i = 0; i < aroundStationAfterDrag.response.msgBody.busStationAroundList.length; i++) {
+								marker = new Tmapv2.Marker({
+									position: new Tmapv2.LatLng(
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].y,
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].x
+									), //Marker의 중심좌표 설정.
+									map: map, //Marker가 표시될 Map 설정..
+									icon: busMarker
+								});
+								aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance =
+										Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) >= 1000 ?
+												Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) / 1000 + 'km' :
+												Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) + 'm'
+								markerPositions.push(marker)
+								marker.addListener("click", function(evt) {
+									console.log(aroundStationAfterDrag.response.msgBody.busStationAroundList[i].stationName +
+											aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance)
+								});
+								marker.addListener("touchend", function (evt) {
+									toReactNative={
+										isMarkerClick : true,
+										data: aroundStationAfterDrag.response.msgBody.busStationAroundList[i]
+									}
+									postMessageReactNative(JSON.stringify(toReactNative));
+								});
+							}
+						} else {
+							toReactNative={
+								isMarkerClick: false,
+								originalData: '0',
+								data: aroundStationAfterDrag.response.msgHeader.resultMessage
+							}
+							postMessageReactNative(JSON.stringify(toReactNative))
+						}
+					},
+					error: function (request, error) {
+						console.log("Request: "+JSON.stringify(request));
+					}
+				});
+			}
+		}
+
+		function postMessageReactNative(text) {
+			try{
+				window.ReactNativeWebView.postMessage(text);
+			} catch (e) {console.log(e)}
+		}
+
+		function fitBounds(x, y) {
+			let zoomLevel = map.getZoom();
+			let latlngSW = new Tmapv2.LatLng(y + 0.002, x - 0.002);
+			let latlngNE = new Tmapv2.LatLng(y - 0.002, x  + 0.002);
+			let latlngBound = new Tmapv2.LatLngBounds(latlngSW, latlngNE)
+			map.fitBounds(latlngBound)
+
+			myMarker.setMap(null)
+
+			myMarker = new Tmapv2.Marker({
+				position: new Tmapv2.LatLng(y,x), //Marker의 중심좌표 설정.
+				map: map, //Marker가 표시될 Map 설정..
+				icon: currentLocation
+			});
+
+			$.ajax({
+				url: 'http://220.64.14.147/ws/rest/busstationservice/searcharound',
+				type: 'GET',
+				data: { serviceKey: '1234567890', x: x, y: y },
+				success: function (data) {
+					aroundStationAfterDrag = JSON.parse(xml2json(data, " "));
+
+					if(aroundStationAfterDrag.response.msgHeader.resultCode === '0') {
+						for (let i = 0; i < aroundStationAfterDrag.response.msgBody.busStationAroundList.length; i++) {
+							marker = new Tmapv2.Marker({
+								position: new Tmapv2.LatLng(
+										aroundStationAfterDrag.response.msgBody.busStationAroundList[i].y,
+										aroundStationAfterDrag.response.msgBody.busStationAroundList[i].x
+								), //Marker의 중심좌표 설정.
+								map: map, //Marker가 표시될 Map 설정..
+								icon: 'data:image/png;base64,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'
+							});
+							markerPositions.push(marker);
+							aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance = Math.round(myMarker.getPosition().distanceTo(marker.getPosition())) + 'm'
+							marker.addListener("click", function(evt) {
+								console.log(aroundStationAfterDrag.response.msgBody.busStationAroundList[i].stationName +
+										aroundStationAfterDrag.response.msgBody.busStationAroundList[i].distance)
+							});
+							marker.addListener("touchend", function (evt) {
+								toReactNative={
+									isMarkerClick : true,
+									data: aroundStationAfterDrag.response.msgBody.busStationAroundList[i]
+								}
+								postMessageReactNative(JSON.stringify(toReactNative));
+							});
+						}
+						toReactNative = {
+							isMarkerClick: false,
+							originalData: '1',
+							data: aroundStationAfterDrag
+						}
+						postMessageReactNative(JSON.stringify(toReactNative));
+					} else {
+						toReactNative={
+							isMarkerClick: false,
+							originalData: '0',
+							data: aroundStationAfterDrag.response.msgHeader.resultMessage
+						}
+						postMessageReactNative(JSON.stringify(toReactNative))
+					}
+				},
+				error: function (request, error) {
+					console.log("Request: "+JSON.stringify(request));
+				}
+			});
+		}
+
+	</script>
+</head>
+
+<body onload="setLocation(123.409561, 41.805538)">
+	<!-- 맵 생성 실행 -->
+	<div id="map_div"></div>
+	<a onclick="fitBounds(127.02719907145543, 37.49523596737127)">Fit Bounds</a>
+</body>
+
+</html>
